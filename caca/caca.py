@@ -1,5 +1,5 @@
 # load caca program
-cf = open("tm.caca")
+cf = open("this.cns")
 caca = cf.read().splitlines()
 
 line = 0 # set line number

@@ -1,4 +1,4 @@
-def interp(inst: str, line: int, stack: list, selnum: int, inp: int = None):
+def interp(inst: str, line: int, stack: list, selnum: int, caca: list, inp: int = None):
      out = ""
      if inst in ("icaca", "out"):
          cha = chr(stack[selnum])
@@ -13,7 +13,7 @@ def interp(inst: str, line: int, stack: list, selnum: int, inp: int = None):
          count = int(inst[6:])
          # print(f"DEBUG: REPEATING INSTRUCTION {caca[line+1]} {count} TIMES")
          for _ in range(0, count-1):
-             interp(caca[line+1], line, stack, selnum)
+             interp(caca[line+1], line, stack, selnum, caca, inp)
 
      elif inst in ("icacan", "sq"):
          stack[selnum] = stack[selnum] ** 2
@@ -63,6 +63,6 @@ def interp(inst: str, line: int, stack: list, selnum: int, inp: int = None):
          stack.append(stack[selnum])
 
      else:
-         print(("INVALID INSTRUCTION: "+inst))
+         out+=("INVALID INSTRUCTION: "+inst)
 
      return line, stack, selnum, out
