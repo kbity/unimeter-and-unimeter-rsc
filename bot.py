@@ -11,6 +11,7 @@ from os.path import isfile, join
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from PIL import Image
+import libcaca
 
 # --- setup --- #
 
@@ -2002,6 +2003,72 @@ async def on_message(message: discord.Message):
                 await message.reply(file=file)
             except Exception as e:
                 await message.reply(f"conversion failed because of {e}")
+
+        elif cmdpref.lower().startswith("run this caca code"):
+            line = 0 # set line number
+            stack = [0] # default stack
+            selnum = 0 # default selection
+
+            ittcap = 3000 # maximum itterations
+            itt = 0
+
+            inputsOrg = cmdpref.lower().replace("run this caca code",'').split(',')
+            inputs = []
+            for inp in inputsOrg:
+                if inp:
+                    inputs.append(int(inp.strip()))
+
+            if not message.attachments:
+                await message.reply("no file")
+                return
+
+            attachment = message.attachments[0]
+            data = await attachment.read()
+
+            if data is None:
+                await message.reply("failed to get data")
+                return
+
+            name, ext = os.path.splitext(attachment.filename)
+            ext = ext.lower()
+
+            if not ext in (".txt", ".caca", ".cns"):
+                await message.reply("this shit is NOT caca :skull:")
+                return
+
+            cac = data.decode('utf-8')
+            caca = cac.splitlines()
+
+            cout = ""
+            while len(caca) > line:
+                if inputs:
+                    inp = inputs[0]
+                else:
+                    inp = 0
+
+                inst = caca[line]
+
+                if inst[:6] in ("cacaca", "repeat"):
+                    count = int(inst[6:])
+                    itt += count
+
+                if ittcap:
+                    if itt > ittcap:
+                        cout += (f"\n itteration cap of {ittcap} exceeded!\n")
+                        break
+
+                line, stack, selnum, out = libcaca.interp(inst, line, stack, selnum, caca, inp)
+
+                if inst in ("youcaca", "input"):
+                    if inputs:
+                        inputs.pop(0)
+
+                cout += (out)
+                line += 1
+                itt += 1
+            cout += (f"\nFinal State: {stack}@#{selnum}")
+
+            await message.reply(f"```\n{cout}\n```")
 
         elif message.author.id == evaluser:
             if cmdpref.lower().startswith("print"):
