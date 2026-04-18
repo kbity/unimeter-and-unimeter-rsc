@@ -1,8 +1,8 @@
 def interp(inst: str, line: int, stack: list, selnum: int, inp: int = None):
+     out = ""
      if inst in ("icaca", "out"):
          cha = chr(stack[selnum])
-         print(cha, end='')
-
+         out = cha
      elif inst in ("icacac", "inc"):
          stack[selnum] += 1
 
@@ -65,4 +65,4 @@ def interp(inst: str, line: int, stack: list, selnum: int, inp: int = None):
      else:
          print(("INVALID INSTRUCTION: "+inst))
 
-     return line, stack, selnum
+     return line, stack, selnum, out

@@ -6,13 +6,14 @@ line = 0 # set line number
 stack = [0]
 selnum = 0
 
-ittcap = 1000 # maximum itterations
+ittcap = 3000 # maximum itterations
 itt = 0
 
 def interp(inst: str, line: int, stack: list, selnum: int, inp: int = None):
+     out = ""
      if inst in ("icaca", "out"):
          cha = chr(stack[selnum])
-         print(cha, end='')
+         out = cha
 
      elif inst in ("icacac", "inc"):
          stack[selnum] += 1
@@ -76,11 +77,12 @@ def interp(inst: str, line: int, stack: list, selnum: int, inp: int = None):
      else:
          print(("INVALID INSTRUCTION: "+inst))
 
-     return line, stack, selnum
+     return line, stack, selnum, out
 
 while len(caca) > line:
      inst = caca[line]
-     line, stack, selnum = interp(inst, line, stack, selnum)
+     line, stack, selnum, out = interp(inst, line, stack, selnum)
+     print(out, end='')
      line += 1
      itt += 1
      if ittcap:
