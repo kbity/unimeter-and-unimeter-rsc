@@ -63,6 +63,6 @@ def interp(inst: str, line: int, stack: list, selnum: int, caca: list, inp: int 
          stack.append(stack[selnum])
 
      else:
-         out+=("INVALID INSTRUCTION: "+inst)
+         out+=("INVALID INSTRUCTION: "+inst+"\n")
 
      return line, stack, selnum, out
