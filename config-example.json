@@ -1,0 +1,21 @@
+{
+	"token": "ok bro",
+	"clientId": "idk",
+    "startupMessageChannel": "123456789012345678",
+    "allowedModuleEditors": ["123456789012345678", "23456789009876543", "213456765645342"],
+    "blockedUsers": ["123456789012345678", "23456789009876543", "213456765645342"],
+    "allowedBots": ["123456789012345678", "23456789009876543", "213456765645342"],
+    "slinxianServers": ["123456789012345678", "23456789009876543", "213456765645342"],
+    "startupMessages": [
+        "Mari, eelel, and Turion Goober are different people",
+        "`chacking cloroxbleachgaming123456789...`",
+        "wtf is a unimeter",
+        "<@1118256931040149626> hey bro",
+        "hey slinx abotmin source code when>??????",
+        "hey unimeter run unimeter",
+        "did you know that i live in a different nation than all of you? its called unimeter-istan"
+    ],
+    "statuses": [
+      "ATi Mobility Radeon M6-P"
+    ]
+}
