@@ -8,7 +8,7 @@ line = 0 # set line number
 stack = [0]
 selnum = 0
 
-ittcap = 3000 # maximum itterations
+ittcap = 0 # maximum itterations
 itt = 0
 
 while len(caca) > line:
