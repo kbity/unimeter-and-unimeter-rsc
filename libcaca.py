@@ -44,7 +44,7 @@ def interp(inst: str, line: int, stack: list, selnum: int, caca: list, inp: int 
          if selnum == len(stack):
              selnum = 0
 
-     elif inst in ("newcaca", "newcaca"):
+     elif inst in ("newcaca", "addnum"):
          stack.append(0)
 
      elif inst in ("icaca?", "ifp"):
