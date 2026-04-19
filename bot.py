@@ -81,7 +81,7 @@ e3cd_xyz["ban"] = 'banned'
 e3cd_xyz["removerole"] = 'stripped a role from'
 e3cd_xyz["addrole"] = 'granted a role'
 
-prefwords = ["hey unimeter ", "hey unimeter fucking ", "uni!", "unimeter!", "unimeter ", "unimeter, ", "hey unicycle "]
+prefwords = ["hey unimeter ", "hey unimeter, ", "uni!", "unimeter!", "unimeter ", "unimeter, ", "hey unicycle ", "hey flowmetor ", "hey univac ", "hey meteruni ", "hey flowmeter-rsc "]
 
 desc = {}
 desc["Compact"] = """
@@ -432,7 +432,18 @@ class TagCmd(commands.Cog):
                     return await ctx.followup.send(ambi[:2000])
     
             if not tage in db["tags"]:
-                return await ctx.followup.send(f"this tag is already lacks existance <:thubm_what:1150405177464070144>")
+                if merge:
+                    db.setdefault("tagblacklist", [])
+                    dbm = load_db(message.guild.id, merge)
+                    if tage in db["tagblacklist"]:
+                        db["tagblacklist"].remove(tage)
+                        save_db(message.guild.id, db)
+                        return await message.reply(f"removed blacklist for **Slinx's attic** tag `{tage}` in **{message.guild}**")
+                    else:
+                        if tage in dbm["tags"]:
+                            db["tagblacklist"].append(tage)
+                            save_db(message.guild.id, db)
+                            return await message.reply(f"blacklisted **Slinx's attic** tag `{tage}` in **{message.guild}**")
     
             await ctx.followup.send(f"removed tag `{tage}` from **{ctx.guild}**")
             db["tags"].remove(tage)
@@ -928,7 +939,6 @@ async def czech(ctx: commands.Context, msg: str, user: discord.User = None):
             fragments = re.split(r'(?<!\\);', tag)
             fragments = [f.replace(r'\;', ';') for f in fragments]
             message = DummyMessage(ctx, msg, user)
-            print(fragments)
             trigger = resolvetag(message, fragments)
             if trigger:
                 trigger = checkargs(message, fragments)
@@ -1433,6 +1443,11 @@ def load_db(sid, merge=False):
         except FileNotFoundError:
             merge_data = {}
 
+        data.setdefault("tagblacklist", [])
+        for tag in merge_data["tags"]:
+            if tag in data["tagblacklist"]:
+                merge_data["tags"].remove(tag)
+
         # Merge only the 'tags' list
         if "tags" in merge_data:
             if "tags" not in data:
@@ -1858,8 +1873,9 @@ async def on_message(message: discord.Message):
                 dokeywordsearch = True
     
             if dokeywordsearch:
+                dbm = load_db(message.guild.id, merge)
                 tagses = []
-                for tag in db["tags"]:
+                for tag in dbm["tags"]:
                     frogments = re.split(r'(?<!\\);', tag)
                     frogments = [f.replace(r'\;', ';') for f in frogments]
                     if fragments[0] == frogments[0]:
@@ -1877,6 +1893,19 @@ async def on_message(message: discord.Message):
                     return await message.reply(ambi[:2000])
     
             if not tage in db["tags"]:
+                if merge:
+                    db.setdefault("tagblacklist", [])
+                    dbm = load_db(message.guild.id, merge)
+                    if tage in db["tagblacklist"]:
+                        db["tagblacklist"].remove(tage)
+                        save_db(message.guild.id, db)
+                        return await message.reply(f"removed blacklist for **Slinx's attic** tag `{tage}` in **{message.guild}**")
+                    else:
+                        if tage in dbm["tags"]:
+                            db["tagblacklist"].append(tage)
+                            save_db(message.guild.id, db)
+                            return await message.reply(f"blacklisted **Slinx's attic** tag `{tage}` in **{message.guild}**")
+
                 return await message.reply(f"this tag is already lacks existance <:thubm_what:1150405177464070144>")
     
             await message.reply(f"removed tag `{tage}` from **{message.guild}**")
@@ -2069,6 +2098,17 @@ async def on_message(message: discord.Message):
             cout += (f"\nFinal State: {stack}@#{selnum}")
 
             await message.reply(f"```\n{cout}\n```")
+
+        elif cmdpref.lower().startswith("give me the blacklist"):
+            db = load_db(message.guild.id)
+            if (str(message.guild.id) in cfg["slinxianServers"]):
+                db.setdefault("tagblacklist", [])
+                if db["tagblacklist"]:
+                    await message.reply(("```"+"\n".join(db["tagblacklist"])+"```")[:2000])
+                else:
+                    await message.reply("dust")
+            else:
+                await message.reply("no")
 
         elif message.author.id == evaluser:
             if cmdpref.lower().startswith("print"):
