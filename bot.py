@@ -5,7 +5,7 @@ import discord, traceback, random, json, traceback, os, re, asyncio, datetime, m
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import has_permissions, MissingPermissions
-from typing import Literal
+from typing import Literal, Optional
 from os import listdir
 from os.path import isfile, join
 from datetime import datetime, timedelta
@@ -17,6 +17,7 @@ import libcaca
 
 os.makedirs("tags", exist_ok=True)
 os.makedirs("snapins", exist_ok=True)
+os.makedirs("flowdata", exist_ok=True) # flowmeter data
 
 def load_config():
     try:
@@ -25,7 +26,23 @@ def load_config():
     except FileNotFoundError:
         return {}
 
+def get_acronyms():
+    acros = []
+    try:
+        with open('flowdata/acronyms.txt', 'r') as f:
+            accs = f.read().split('\n')
+            for line in accs:
+                sl = line.split('	', 1)
+                if len(sl) == 2:
+                    sl[0] = sl[0].strip()
+                    sl[1] = sl[1].strip()
+                    acros.append((sl[0], sl[1]))
+            return acros
+    except FileNotFoundError:
+        return acros
+
 cfg = load_config()
+ACRONYMS = get_acronyms()
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -91,6 +108,7 @@ Flowmeter made by tema5002.
 Say *hey unimeter add tag keyword;detection_type;reply;args* to **add new tag**
 Say *hey unimeter remove tag keyword* to **remove tag**
 Say *hey unimeter list tags* to **list existing tags on this server**
+Say *hey flowmeter wtf is <thing>* to find a meaning of acronym
 ### **Tag Arguments**
 - **keyword** - keyword which triggers the reply
 - **detection_type**:
@@ -111,6 +129,7 @@ Say *hey unimeter add tag keyword;detection_type;reply;args* to **add new tag**
 Say *hey unimeter update tag keyword;detection_type;reply;args* to **update already existing tag**
 Say *hey unimeter remove tag keyword* to **remove tag**
 Say *hey unimeter list tags* to **list existing tags on this server**
+Say *hey flowmeter wtf is <thing>* to find a meaning of acronym
 ### **Tag Arguments**
 - **keyword** - keyword which triggers the reply
 - **detection_type** (if uppercase its case sensetive except for =/==):
@@ -139,6 +158,7 @@ Say *hey unimeter update tag keyword;detection_type;reply;args* to **update alre
 Say *hey unimeter remove tag keyword or tag* to **remove tag**
 Say *hey unimeter remove tag_id tag_id* to **remove a tag by id**
 Say *hey unimeter list tags* to **list existing tags on this server**
+Say *hey flowmeter wtf is <thing>* to find a meaning of acronym
 ### **Tag Arguments**
 - **keyword** - keyword which triggers the reply
 - **detection_type** (if uppercase its case sensetive except for =/==, and for regex/REGEX which are backwards):
@@ -160,17 +180,27 @@ Say *hey unimeter list tags* to **list existing tags on this server**
 - - replyping - replies to the message instead of sending in the channel and pings the author
 - - byuserUSER-ID - replies only if user id is this, you can chain these to respond to a few people
 - - OR - process compound conditionals as OR instead of AND
+- - to use a webhook to change the name of unimeter, use *name=NAME* and *avatar=URL*
+- - to forcefully bypass delete's and remove's wait, add arg *nrd* (no remove delay)
 ### **Advanced**
 - to pick replies at random for a message, do [*reply1*,*reply2*,*reply3*] in **square brackets**
 - to get other words used in the message, you can do {args}. you can also do {args0...9} to get specific words
 - to get a random number, use {random} (uses the same calcs as /metronome's mute)
 - to get a the user, use {author}, to get the channel, use {channel}
-- to have a var for the tag or users of the tag, use {var} and {var\_user} respectively. to increment or decrement them, use inc\_var/dec\_var as an arg.
-- to use a var from other tags use {var\_*keyword*} and {var\_*keyword*\_user}/{var\_*keyword*USERID} respectively. to increment or decrement these, use inc\_var\_*keyword*/dec\_var\_*keyword* as an arg.
+- to have a var for the tag or users of the tag, use {var} and {var\\_user} respectively.
+- to increment or decrement vars, use inc\\_var/dec\\_var as an arg.
+- to use a var from other tags use {var\\_*keyword*} and {var\\_*keyword*\\_user}/{var\\_*keyword*USERID} respectively. to increment or decrement these, use inc\\_var\\_*keyword*/dec\_var\_*keyword* as an arg.
 - **compounding conditionals**
-- - Specified as &(keyword/detection_type) or !(keyword/detection_type)
+- - Specified as *&(keyword/detection_type)* or *!(keyword/detection_type)* inside of arguments
 - - & requires the conditional to be true, ! requires it to be false
+- - unless OR is in arguments, every & must be true for the tag to process
 """
+
+unimeter_pfp_af2 = """APERTURE IMAGE FORMAT (c) 1993
+80x80,t,1
+ FF00FF!000000"090909#2F2F2F$333333%525252&007EFF'189839(7F7F7F)BDB7B6*B5C19D+CFCFD5,E0E0E2
+)~)~)~)~)~)~)~)L#$)h,#)!#%)e,&#&)b,(#')^,+#')V,3#()R,6#()P,8#))L,;#*(!)G,?#*(1)!(&)"(!)#(&,B#*(@,H#)(=,K#)(:,M#*(6,P#*(3,R'"#)(1,R'%#)(,,P'+#)(',O''#%'%#*(%,L'(##'%#!'%#)(#,L''#"'##!'%#!'%#)(#,I''#$'%#!'"#"'&#*(!,F''#$'##"'###'*#)%!,D'&#"'$#!'$##'.#)%!,'&$,6'*#!'$#%'"#"'&#!'!#!'$#)%!,$&',3'.#$'$##'##!'!#!'"#"'!#!'$#(%","&$,3'?#!'"#"'!#"*#'$#'%","&#,/#%'9#!'"#"'!#!'"#!*('$#&%"#!,"&$,(#.'4#"'!#"'$*+'$#%%"#!,#&$,%#2'.#%'$*-''#%%"#!,#&$'##5'-#!'"*.'+#%%"#!,!&%'##7'-*.'(,%#$%##"&#'%#8'-*''(,,%!#!%%##'&#&+*#('-*#'(,.%+##'$#$+%#&+##&'5,+%3#"'##$+$#'+$#%'3,(%8#"'"#%+$#",##"+%#$'.,*%5$"&(#%+$#!,%#!+%#$'*,+%7$"&(#&+$#!,&+$#%'#,/%:$"&#$$#)+$,%+##&'!,,%?$#&#$$#,,%+"#&,($;%*$$&$$$#),%#),$$C%&$&&#$$#(,%#',$$H%#$%&$$%##'!##,%#&,#$L%!$!&($&#',###,$$S&#$*#$,($f#!,"$~$G",$M"H&&$4"T&'"+$'"W&#"m&#"n&$"m&&"m&#"l&#"k&$"k&$"j&$"l&""~"~"J!~!~!~!~!~!~!~!^"""
+mlav = apftool.decodeaf2(unimeter_pfp_af2)
 
 # --- commands --- #
 
@@ -923,6 +953,72 @@ async def poland(ctx: commands.Context, emoji: str, msgid: str):
     except Exception as e:
         await ctx.channel.send(f"500 internal server error\n-# {e}")
 
+@tree.command(name="wtf", description="find a meaning of acronym")
+@app_commands.describe(thing = 'thing')
+@app_commands.allowed_installs(guilds=True, users=True)
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+async def wtf(ctx: commands.Context, thing: str):
+    h = search_acronym(thing.lower())
+    return await ctx.response.send_message(h)
+
+# this command is stolen from cat bot but who cares
+@bot.tree.command(description="Change Unimeter avatar")
+@discord.app_commands.describe(avatar="The avatar to use (leave empty to reset)")
+async def changeavatar(message: discord.Interaction, avatar: Optional[discord.Attachment]):
+    try:
+        await message.response.defer()
+
+        if not str(message.user.id) in cfg["allowedModuleEditors"] and not ctx.user.guild_permissions.manage_guild:
+            return await message.followup.send(f"perms issue <:pointlaugh:1128309108001484882><:pointlaugh:1128309108001484882><:pointlaugh:1128309108001484882><:pointlaugh:1128309108001484882><:pointlaugh:1128309108001484882>")
+
+        if avatar:
+            name, ext = os.path.splitext(avatar.filename)
+            ext = ext.lower()
+            data = await avatar.read()
+
+        if avatar and avatar.content_type not in ["image/png", "image/jpeg", "image/gif", "image/webp"] and not ext in apftool.extensions_all:
+            await message.followup.send("Invalid file type! Please upload a PNG, JPEG, GIF, WebP, OTB, WBMP, APF, or AF2 image.", ephemeral=True)
+            return
+
+        if avatar and ext in apftool.extensions_all:
+            png_bytes = apftool.decodeany(data)
+            avatar_value = discord.utils._bytes_to_base64_data(png_bytes)
+        elif avatar:
+            avatar_value = discord.utils._bytes_to_base64_data(data)
+        else:
+            avatar_value = None
+
+        try:
+            await bot.http.request(discord.http.Route("PATCH", f"/guilds/{message.guild.id}/members/@me"), json={"avatar": avatar_value})
+            await message.followup.send(f"Avatar changed successfully!")
+        except Exception:
+            await message.followup.send(f"Failed to change avatar! Your image is too big or you are changing avatars too quickly.", ephemeral=True)
+            return
+    except Exception as e:
+        await message.channel.send(f"500 internal server error\n-# {e}")
+
+# this command is stolen from neocat police but who cares
+@tree.command(name="nick", description="change nicolasname")
+@app_commands.describe(new_nickname="their new identity")
+async def nickname(ctx: commands.Context, new_nickname: str = ""):
+    await ctx.response.defer()
+
+    if not str(ctx.user.id) in cfg["allowedModuleEditors"] and not ctx.user.guild_permissions.manage_guild:
+        return await ctx.followup.send(f"perms issue <:pointlaugh:1128309108001484882><:pointlaugh:1128309108001484882><:pointlaugh:1128309108001484882><:pointlaugh:1128309108001484882><:pointlaugh:1128309108001484882>")
+
+    user = ctx.guild.get_member(bot.user.id)
+    if len(new_nickname) > 32:
+        await ctx.followup.send("nickname is too long")
+        return
+    try:
+        await user.edit(nick=new_nickname)
+        if new_nickname == "":
+            await ctx.followup.send(f"{ctx.user.mention} reset {user.mention}'s nick.")
+        else:
+            await ctx.followup.send(f"{ctx.user.mention} renamed {user.mention} to `{new_nickname}`.")
+    except Exception:
+        await ctx.followup.send("cant :skull:")
+
 @tree.command(name="check", description="check by which tags a message triggered")
 @app_commands.describe(msg = 'who can it be now? 🎷🐛', user = 'spoof a user')
 async def czech(ctx: commands.Context, msg: str, user: discord.User = None):
@@ -1077,6 +1173,8 @@ async def ping(ctx: commands.Context, user: discord.User = None):
 
 @tree.command(name="nametest", description="Explore new names!!!!!!!!!!!")
 @app_commands.describe(name= 'who can it be now? 🎷🐛')
+@app_commands.allowed_installs(guilds=True, users=True)
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def czech(ctx: commands.Context, name: str):
     try:
         name_pos = name+"'s"
@@ -1461,6 +1559,31 @@ def save_db(sid, data):
     with open(f'tags/{sid}.json', 'w') as f:
         json.dump(data, f, indent=4)
 
+async def get_or_create_webhook(ctxchannel, db):
+    db.setdefault("webhooks", {})
+    webhook_id = db["webhooks"].get(str(ctxchannel.id), None)
+    webhook = None
+
+    if webhook_id:
+        try:
+            webhooks = await ctxchannel.webhooks()
+            webhook = discord.utils.get(webhooks, id=webhook_id)
+            if webhook.user:
+                if not webhook.user.id  == bot.user.id:
+                    raise Exception("not mine!")
+        except Exception:
+            webhook = None
+
+    if webhook is None:
+        # Webhook is missing or invalid; create a new one
+        webhook_obj = await ctxchannel.create_webhook(name="unimeter but sane", avatar=mlav)
+        webhook_id = webhook_obj.id
+        db["webhooks"][str(ctxchannel.id)] = webhook_id
+        save_db(str(ctxchannel.guild.id), db)
+        webhook = webhook_obj
+
+    return webhook, db # update database with the function to prevent immediate reverts
+
 def orderrandom(orders: int = 6):
     return int((10**random.randint(1, orders))*random.random())
 
@@ -1545,7 +1668,11 @@ async def resolveoutcome(message, fragments):
         return
 
     weeou = None
+    avatarurl = None
+    webname = None
+    webhookmode = False
     response = fragments[2]
+
     if response.startswith("[") and response.endswith("]"):
         outcomes = re.split(r'(?<!\\),', response[1:-1])
         outcomes = [o.replace(r'\,', ',') for o in outcomes]
@@ -1555,6 +1682,13 @@ async def resolveoutcome(message, fragments):
 
     vari["author"] = message.author.name
     vari["channel"] = message.channel.name
+
+    for fragment in fragments[3:]:
+        if "name=" in fragment.lower():
+            webhookmode = True
+            webname = fragment[5:]
+        if "avatar=" in fragment.lower():
+            avatarurl = fragment[7:]
 
     if "{args" in fragments[2]:
         start = message.content.lower().find(fragments[0].lower())
@@ -1630,19 +1764,40 @@ async def resolveoutcome(message, fragments):
                     await message.add_reaction(response.strip())
             except Exception as e:
                 print(e)
-        elif "replyping" in fragments[3:]:
+        elif "replyping" in fragments[3:] and not webhookmode:
             if response:
                 weeou = await message.reply(response)
-        elif "reply" in fragments[3:]:
+        elif "reply" in fragments[3:] and not webhookmode:
             if response:
                 weeou = await message.reply(response, allowed_mentions=discord.AllowedMentions.none())
         else:
             if response:
-                weeou = await message.channel.send(response)
+                if webhookmode:
+                    message_data = response
+
+                    if "reply" in fragments[3:] or "replyping" in fragments[3:]:
+                        omlmsg = message.content
+                        if message.content.startswith("-# ┌ <:reply:1422725515608854579>"):
+                            omlmsg = " ".join(message.content.splitlines()[1:])
+    
+                        omlmsg = omlmsg.replace('\n', ' ')
+                        if len(omlmsg) > 128:
+                            omlmsg[:125] += "..."
+
+                        msglink = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                        reply_thing = f"-# ┌ <:reply:1422725515608854579> **[@{str(message.author).replace('#0000', '')}]({msglink})**: {omlmsg}\n"
+                        message_data = reply_thing + message_data
+
+                    webhook, db = await get_or_create_webhook(message.channel, db)
+                    weeou = await webhook.send(content=message_data, username=webname, avatar_url=avatarurl)
+                else:
+                    weeou = await message.channel.send(response)
+
         if "delete" in fragments[3:]:
             if weeou or not response:
                 await message.delete()
-                await asyncio.sleep(5)
+                if not "nrd" in fragments[3:]:
+                    await asyncio.sleep(5)
                 if weeou:
                     await weeou.delete()
             else:
@@ -1652,7 +1807,8 @@ async def resolveoutcome(message, fragments):
             if weeou or not response:
                 await message.delete()
             else:
-                await asyncio.sleep(5)
+                if not "nrd" in fragments[3:]:
+                    await asyncio.sleep(5)
                 await message.delete()
 
 def generatetaglist(guildId, tage: int = 10, merge: bool = False):
@@ -1764,6 +1920,14 @@ async def marischeduler(maritasks: dict, timezone: str = "UTC"):
                 mariqueue[task] -= 1
         await asyncio.sleep(5)
 
+def search_acronym(thing):
+    matches = [f"{acronym}: {meaning}" for acronym, meaning in ACRONYMS if acronym == thing]
+    
+    if not matches:
+        return f'i do not know what "{thing}" means'
+    
+    return '\n'.join(matches)
+
 # --- events --- #
 
 @bot.event
@@ -1798,6 +1962,7 @@ async def on_ready():
 @bot.event
 async def on_message(message: discord.Message):
     global cfg
+    global ACRONYMS
     if message.author.id == bot.user.id:
         return
     if str(message.author.id) in cfg["blockedUsers"]:
@@ -1965,6 +2130,10 @@ async def on_message(message: discord.Message):
             await message.reply(f"updated tag `{tage}` to `{tage_new}` in **{message.guild}**")
             db["tags"][(db["tags"].index(tage))] = tage_new
             save_db(message.guild.id, db)
+
+        elif cmdpref.lower().startswith("wtf is "):
+            h = search_acronym(cmdpref[7:].lower())
+            return await message.reply(h)
 
         elif cmdpref.lower().startswith("convert this to af2"):
             fbls = False
@@ -2155,6 +2324,7 @@ async def on_message(message: discord.Message):
 
             elif cmdpref.lower().startswith("reload"):
                 cfg = load_config()
+                ACRONYMS = get_acronyms()
                 await message.reply("ok")
 
             elif cmdpref.lower().startswith("status"):
@@ -2273,7 +2443,7 @@ class MenuView(discord.ui.View):
         await inter.response.edit_message(embed=embed, view=self)
     @discord.ui.button(label=">", style=discord.ButtonStyle.gray)
     async def next(self, inter: discord.Interaction, button: discord.ui.Button[MenuView]) -> None:
-        db = load_db(self.guildId)
+        db = load_db(self.guildId, self.merge)
         self.page += 10
         if self.page > (math.ceil(len(db['tags'])/10))*10:
             self.page = (math.ceil(len(db['tags'])/10))*10
@@ -2281,7 +2451,7 @@ class MenuView(discord.ui.View):
         await inter.response.edit_message(embed=embed, view=self)
     @discord.ui.button(label=">>", style=discord.ButtonStyle.gray)
     async def last(self, inter: discord.Interaction, button: discord.ui.Button[MenuView]) -> None:
-        db = load_db(self.guildId)
+        db = load_db(self.guildId, self.merge)
         self.page = (math.ceil(len(db['tags'])/10))*10
         embed = generatetaglist(self.guildId, self.page, self.merge)
         await inter.response.edit_message(embed=embed, view=self)
