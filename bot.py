@@ -98,7 +98,7 @@ e3cd_xyz["ban"] = 'banned'
 e3cd_xyz["removerole"] = 'stripped a role from'
 e3cd_xyz["addrole"] = 'granted a role'
 
-prefwords = ["hey unimeter ", "hey unimeter, ", "uni!", "unimeter!", "unimeter ", "unimeter, ", "hey unicycle ", "hey flowmetor ", "hey univac ", "hey meteruni ", "hey flowmeter-rsc "]
+prefwords = cfg["prefwords"]
 
 desc = {}
 desc["Compact"] = """
@@ -189,7 +189,7 @@ Say *hey flowmeter wtf is <thing>* to find a meaning of acronym
 - to get a the user, use {author}, to get the channel, use {channel}
 - to have a var for the tag or users of the tag, use {var} and {var\\_user} respectively.
 - to increment or decrement vars, use inc\\_var/dec\\_var as an arg.
-- to use a var from other tags use {var\\_*keyword*} and {var\\_*keyword*\\_user}/{var\\_*keyword*USERID} respectively. to increment or decrement these, use inc\\_var\\_*keyword*/dec\_var\_*keyword* as an arg.
+- to use a var from other tags use {var\\_*keyword*} and {var\\_*keyword*\\_user}/{var\\_*keyword*USERID} respectively. to increment or decrement these, use inc\\_var\\_*keyword*/dec\\_var\\_*keyword* as an arg.
 - **compounding conditionals**
 - - Specified as *&(keyword/detection_type)* or *!(keyword/detection_type)* inside of arguments
 - - & requires the conditional to be true, ! requires it to be false
@@ -285,64 +285,64 @@ class Kreisicoins(commands.Cog):
         except Exception as e:
             await ctx.channel.send(f"500 internal server error\n-# {e}")
 
-    @kreisicoins.command(name="bank", description="withdraw or deposit from bank")
-    @app_commands.describe(count="positive for savings, negative for loan")
-    async def transfer(self, ctx: discord.Interaction, count: int = 0):
-        try:
-            await ctx.response.defer(ephemeral=False)
-            db = load_db(ctx.guild.id)
-            db.setdefault("invs", {})
-            db["invs"].setdefault(str(ctx.user.id), {})
-            db["invs"][str(ctx.user.id)].setdefault("kreisicoins", 0)
-            db["invs"][str(ctx.user.id)].setdefault("bank", 0)
-            if count == 0:
-                debt = "in savings"
-                if 0 > db["invs"][str(ctx.user.id)]["bank"]:
-                    debt = "in debt"
-                await ctx.followup.send(f"you have {db['invs'][str(ctx.user.id)]['kreisicoins']} kreisicoins\nbank balance: {abs(db['invs'][str(ctx.user.id)]['bank'])} {debt}")
-            else:
-                if count > db["invs"][str(ctx.user.id)]["kreisicoins"]:
-                    return await ctx.followup.send("you cannot deposit more than you own")
-                db["invs"][str(ctx.user.id)]["kreisicoins"] -= count
-                db["invs"][str(ctx.user.id)]["bank"] += count
-                debt = "in savings"
-                tofrom = f"deposited {abs(count)} kreisicoins"
-                if 0 > count:
-                    tofrom = f"withdrawn {abs(count)} kreisicoins"
-                if 0 > db["invs"][str(ctx.user.id)]["bank"]:
-                    debt = "in debt"
-                    if -2000 > db["invs"][str(ctx.user.id)]["bank"]:
-                        return await ctx.followup.send("loan rejected")
-                save_db(ctx.guild.id, db)
-                await ctx.followup.send(f"*you {tofrom} to the bank*\n-# *you now have {db['invs'][str(ctx.user.id)]['kreisicoins']} kreisicoins*\n-# *bank balance: {abs(db['invs'][str(ctx.user.id)]['bank'])} {debt}*")
-        except Exception as e:
-            await ctx.channel.send(f"500 internal server error\n-# {e}")
+    #@kreisicoins.command(name="bank", description="withdraw or deposit from bank")
+    #@app_commands.describe(count="positive for savings, negative for loan")
+    #async def transfer(self, ctx: discord.Interaction, count: int = 0):
+    #    try:
+    #        await ctx.response.defer(ephemeral=False)
+    #        db = load_db(ctx.guild.id)
+    #        db.setdefault("invs", {})
+    #        db["invs"].setdefault(str(ctx.user.id), {})
+    #        db["invs"][str(ctx.user.id)].setdefault("kreisicoins", 0)
+    #        db["invs"][str(ctx.user.id)].setdefault("bank", 0)
+    #        if count == 0:
+    #            debt = "in savings"
+    #            if 0 > db["invs"][str(ctx.user.id)]["bank"]:
+    #                debt = "in debt"
+    #            await ctx.followup.send(f"you have {db['invs'][str(ctx.user.id)]['kreisicoins']} kreisicoins\nbank balance: {abs(db['invs'][str(ctx.user.id)]['bank'])} {debt}")
+    #        else:
+    #            if count > db["invs"][str(ctx.user.id)]["kreisicoins"]:
+    #                return await ctx.followup.send("you cannot deposit more than you own")
+    #            db["invs"][str(ctx.user.id)]["kreisicoins"] -= count
+    #            db["invs"][str(ctx.user.id)]["bank"] += count
+    #            debt = "in savings"
+    #            tofrom = f"deposited {abs(count)} kreisicoins"
+    #            if 0 > count:
+    #                tofrom = f"withdrawn {abs(count)} kreisicoins"
+    #            if 0 > db["invs"][str(ctx.user.id)]["bank"]:
+    #                debt = "in debt"
+    #                if -2000 > db["invs"][str(ctx.user.id)]["bank"]:
+    #                    return await ctx.followup.send("loan rejected")
+    #            save_db(ctx.guild.id, db)
+    #            await ctx.followup.send(f"*you {tofrom} to the bank*\n-# *you now have {db['invs'][str(ctx.user.id)]['kreisicoins']} kreisicoins*\n-# *bank balance: {abs(db['invs'][str(ctx.user.id)]['bank'])} {debt}*")
+    #    except Exception as e:
+    #        await ctx.channel.send(f"500 internal server error\n-# {e}")
 
-    @kreisicoins.command(name="gamble", description="LETS GO GAMBLINGGGGGGGGGGGG!!!!!!!!!")
-    async def gamble(self, ctx: discord.Interaction, count: int = 1, risk: Literal[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] = 2):
-        try:
-            await ctx.response.defer(ephemeral=False)
-            db = load_db(ctx.guild.id)
-            db.setdefault("invs", {})
-            db["invs"].setdefault(str(ctx.user.id), {})
-            db["invs"][str(ctx.user.id)].setdefault("kreisicoins", 0)
-            if count < 0:
-                return await ctx.followup.send("theft is illegal, dumbass")
-            if count > db["invs"][str(ctx.user.id)]["kreisicoins"]:
-                return await ctx.followup.send("insufficient funds for gamble")
-            db["invs"][str(ctx.user.id)]["kreisicoins"] -= count
-            save_db(ctx.guild.id, db)
-            await ctx.followup.send(f"*you gambled **{count}** kreisicoins!*")
-            await asyncio.sleep(random.randint(3,7))
-            db = load_db(ctx.guild.id)
-            lost = "lost!"
-            if random.randint(1,risk) == 1:
-                lost = f"won!!! you gained **{count*(risk-1)}** kreisicoins and"
-                db["invs"][str(ctx.user.id)]["kreisicoins"] += count*risk
-            save_db(ctx.guild.id, db)
-            await ctx.followup.send(f"*you {lost} you now have **{db['invs'][str(ctx.user.id)]['kreisicoins']}** total kreisicoins*")
-        except Exception as e:
-            await ctx.channel.send(f"500 internal server error\n-# {e}")
+    #@kreisicoins.command(name="gamble", description="LETS GO GAMBLINGGGGGGGGGGGG!!!!!!!!!")
+    #async def gamble(self, ctx: discord.Interaction, count: int = 1, risk: Literal[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] = 2):
+    #    try:
+    #        await ctx.response.defer(ephemeral=False)
+    #        db = load_db(ctx.guild.id)
+    #        db.setdefault("invs", {})
+    #        db["invs"].setdefault(str(ctx.user.id), {})
+    #        db["invs"][str(ctx.user.id)].setdefault("kreisicoins", 0)
+    #        if count < 0:
+    #            return await ctx.followup.send("theft is illegal, dumbass")
+    #        if count > db["invs"][str(ctx.user.id)]["kreisicoins"]:
+    #            return await ctx.followup.send("insufficient funds for gamble")
+    #        db["invs"][str(ctx.user.id)]["kreisicoins"] -= count
+    #        save_db(ctx.guild.id, db)
+    #        await ctx.followup.send(f"*you gambled **{count}** kreisicoins!*")
+    #        await asyncio.sleep(random.randint(3,7))
+    #        db = load_db(ctx.guild.id)
+    #        lost = "lost!"
+    #        if random.randint(1,risk) == 1:
+    #            lost = f"won!!! you gained **{count*(risk-1)}** kreisicoins and"
+    #            db["invs"][str(ctx.user.id)]["kreisicoins"] += count*risk
+    #        save_db(ctx.guild.id, db)
+    #        await ctx.followup.send(f"*you {lost} you now have **{db['invs'][str(ctx.user.id)]['kreisicoins']}** total kreisicoins*")
+    #    except Exception as e:
+    #        await ctx.channel.send(f"500 internal server error\n-# {e}")
 
     @kreisicoins.command(name="leaderboard", description="who has the kreisiest coins")
     async def leaderboard(self, ctx: commands.Interaction):
@@ -757,53 +757,53 @@ async def logchannel(ctx: commands.Context, channel: discord.TextChannel):
     except Exception as e:
         await ctx.channel.send(f"500 internal server error\n-# {e}")
 
-@tree.command(name="unkreisichannel", description="sets a channel for not spawning kreisicoins")
-@discord.app_commands.default_permissions(manage_guild=True)
-@app_commands.describe(channel = 'channel to use for logging')
-async def logchannel(ctx: commands.Context, channel: discord.TextChannel, remove: bool = False):
-    try:
-        await ctx.response.defer(ephemeral=False)
+#@tree.command(name="unkreisichannel", description="sets a channel for not spawning kreisicoins")
+#@discord.app_commands.default_permissions(manage_guild=True)
+#@app_commands.describe(channel = 'channel to use for logging')
+#async def logchannel(ctx: commands.Context, channel: discord.TextChannel, remove: bool = False):
+#    try:
+#        await ctx.response.defer(ephemeral=False)
+#
+#        db = load_db(ctx.guild.id)
+#        db.setdefault("unkreisi", [])
+#        un = ""
+#        if remove:
+#            un = "un"
+#            if str(channel.id) in db["unkreisi"]:
+#                db["unkreisi"].remove(str(channel.id))
+#        else:
+#            if not str(channel.id) in db["unkreisi"]:
+#                db["unkreisi"].append(str(channel.id))
+#
+#        save_db(ctx.guild.id, db)
+#
+#        await ctx.followup.send(f"{un}set <#{channel.id}> as an unkreisi channel for this server")
+#    except Exception as e:
+#        await ctx.channel.send(f"500 internal server error\n-# {e}")
 
-        db = load_db(ctx.guild.id)
-        db.setdefault("unkreisi", [])
-        un = ""
-        if remove:
-            un = "un"
-            if str(channel.id) in db["unkreisi"]:
-                db["unkreisi"].remove(str(channel.id))
-        else:
-            if not str(channel.id) in db["unkreisi"]:
-                db["unkreisi"].append(str(channel.id))
-
-        save_db(ctx.guild.id, db)
-
-        await ctx.followup.send(f"{un}set <#{channel.id}> as an unkreisi channel for this server")
-    except Exception as e:
-        await ctx.channel.send(f"500 internal server error\n-# {e}")
-
-@tree.command(name="kreisichannel", description="sets a channel for spawning kreisicoins (excludes all other channels)")
-@discord.app_commands.default_permissions(manage_guild=True)
-@app_commands.describe(channel = 'channel to set for kreisicoins')
-async def logchannel(ctx: commands.Context, channel: discord.TextChannel, remove: bool = False):
-    try:
-        await ctx.response.defer(ephemeral=False)
-
-        db = load_db(ctx.guild.id)
-        db.setdefault("kreisi", [])
-        un = ""
-        if remove:
-            un = "un"
-            if str(channel.id) in db["kreisi"]:
-                db["kreisi"].remove(str(channel.id))
-        else:
-            if not str(channel.id) in db["kreisi"]:
-                db["kreisi"].append(str(channel.id))
-
-        save_db(ctx.guild.id, db)
-
-        await ctx.followup.send(f"{un}set <#{channel.id}> as an kreisi channel for this server")
-    except Exception as e:
-        await ctx.channel.send(f"500 internal server error\n-# {e}")
+#@tree.command(name="kreisichannel", description="sets a channel for spawning kreisicoins (excludes all other channels)")
+#@discord.app_commands.default_permissions(manage_guild=True)
+#@app_commands.describe(channel = 'channel to set for kreisicoins')
+#async def logchannel(ctx: commands.Context, channel: discord.TextChannel, remove: bool = False):
+#    try:
+#        await ctx.response.defer(ephemeral=False)
+#
+#        db = load_db(ctx.guild.id)
+#        db.setdefault("kreisi", [])
+#        un = ""
+#        if remove:
+#            un = "un"
+#            if str(channel.id) in db["kreisi"]:
+#                db["kreisi"].remove(str(channel.id))
+#        else:
+#            if not str(channel.id) in db["kreisi"]:
+#                db["kreisi"].append(str(channel.id))
+#
+#        save_db(ctx.guild.id, db)
+#
+#        await ctx.followup.send(f"{un}set <#{channel.id}> as an kreisi channel for this server")
+#    except Exception as e:
+#        await ctx.channel.send(f"500 internal server error\n-# {e}")
 
 @tree.command(name="ok-bro", description="Replies with ok bro!")
 @app_commands.user_install()
@@ -1812,24 +1812,25 @@ async def resolveoutcome(message, fragments):
                 await message.delete()
 
 def generatetaglist(guildId, tage: int = 10, merge: bool = False):
-        db = load_db(guildId, merge)
-        tagslist = ""
-        idno = tage-10
-        for tag in db["tags"][tage-10:tage]:
-            if len(str(idno+10)) > len(str(idno)):
-                padding = " "
-            else:
-                padding = ""
-            tagslist += f"`{padding}{idno}.` {tag}\n"
-            idno += 1
-        if not tagslist:
-            tagslist = "-# dust"
-        embed = discord.Embed(
-            title=f"Page ({math.floor(tage/10)}/{math.ceil(len(db['tags'])/10)})",
-            description=tagslist,
-            color=discord.Color.from_rgb(0x46, 0x78, 0x52)
-        )
-        return embed
+    db = load_db(guildId, merge)
+    db.setdefault("tags", [])
+    tagslist = ""
+    idno = tage-10
+    for tag in db["tags"][tage-10:tage]:
+        if len(str(idno+10)) > len(str(idno)):
+            padding = " "
+        else:
+            padding = ""
+        tagslist += f"`{padding}{idno}.` {tag}\n"
+        idno += 1
+    if not tagslist:
+        tagslist = "-# dust"
+    embed = discord.Embed(
+        title=f"Page ({math.floor(tage/10)}/{math.ceil(len(db['tags'])/10)})",
+        description=tagslist,
+        color=discord.Color.from_rgb(0x46, 0x78, 0x52)
+    )
+    return embed
 
 def hash_string(s: str) -> int:
     h = 0x1337C0DE
@@ -1974,9 +1975,22 @@ async def on_message(message: discord.Message):
     db = load_db(message.guild.id)
     globalse = load_db("GLOBAL")
     globalse.setdefault("ropl", {})
+    globalse.setdefault("no-ropl", [])
+
+    if message.content.upper() == "HEY UNIMETER DONT ROPL ME":
+        if not str(message.author.id) in globalse["no-ropl"]:
+            globalse["no-ropl"].append(str(message.author.id))
+            save_db("GLOBAL", globalse)
+        await message.reply("ok fine")
+
+    if message.content.upper() == "HEY UNIMETER ROPL ME":
+        if str(message.author.id) in globalse["no-ropl"]:
+            globalse["no-ropl"].remove(str(message.author.id))
+            save_db("GLOBAL", globalse)
+        await message.reply("yay i'll annoy you again")
 
     for userid in globalse["ropl"]:
-        if not message.author.id == 986132157967761408:
+        if not str(message.author.id) in globalse["no-ropl"]:
             if any(user.id == int(userid) for user in message.mentions):
                 try:
                     await message.add_reaction(globalse["ropl"][userid])
@@ -2353,38 +2367,38 @@ async def on_message(message: discord.Message):
             if trigger:
                 await resolveoutcome(message, fragments)
 
-        if random.randint(1,100) == 1:
-            db = load_db(message.guild.id)
-            db.setdefault("unkreisi", [])
-            db.setdefault("kreisi", [])
-            if str(message.channel.id) in db["unkreisi"]:
-                return
-            if len(db["kreisi"]) > 0 and not str(message.channel.id) in db["kreisi"]:
-                return
-            db.setdefault("kcs", {})
-            db["kcs"].setdefault(str(message.channel.id), 0)
-            spawned = random.randint(13,58)
-            db["kcs"][str(message.channel.id)] += spawned
-            domore = ""
-            if not db["kcs"][str(message.channel.id)] == spawned:
-                domore = f"\n-# There is a total of {db['kcs'][str(message.channel.id)]} kreisicoins here now"
-            await message.channel.send(f"**{spawned}** kreisicoins just appeared! type 'kreisi' to take them!{domore}")
-            save_db(message.guild.id, db)
-        if message.content.lower() == "kreisi":
-            if message.author.id == 1030817797921583236:
-                return await message.reply("get the fuck out")
-            db = load_db(message.guild.id)
-            db.setdefault("kcs", {})
-            db["kcs"].setdefault(str(message.channel.id), 0)
-            if db["kcs"][str(message.channel.id)] > 0:
-                counted = db["kcs"][str(message.channel.id)]
-                db.setdefault("invs", {})
-                db["invs"].setdefault(str(message.author.id), {})
-                db["invs"][str(message.author.id)].setdefault("kreisicoins", 0)
-                db["invs"][str(message.author.id)]["kreisicoins"] += counted
-                db["kcs"][str(message.channel.id)] = 0
-                save_db(message.guild.id, db)
-                await message.channel.send(f"**{message.author.name}** just got **{counted}** kreisicoins")
+#        if random.randint(1,100) == 1:
+#            db = load_db(message.guild.id)
+#            db.setdefault("unkreisi", [])
+#            db.setdefault("kreisi", [])
+#            if str(message.channel.id) in db["unkreisi"]:
+#                return
+#            if len(db["kreisi"]) > 0 and not str(message.channel.id) in db["kreisi"]:
+#                return
+#            db.setdefault("kcs", {})
+#            db["kcs"].setdefault(str(message.channel.id), 0)
+#            spawned = random.randint(13,58)
+#            db["kcs"][str(message.channel.id)] += spawned
+#            domore = ""
+#            if not db["kcs"][str(message.channel.id)] == spawned:
+#                domore = f"\n-# There is a total of {db['kcs'][str(message.channel.id)]} kreisicoins here now"
+#            await message.channel.send(f"**{spawned}** kreisicoins just appeared! type 'kreisi' to take them!{domore}")
+#            save_db(message.guild.id, db)
+#        if message.content.lower() == "kreisi":
+#            if message.author.id == 1030817797921583236:
+#                return await message.reply("get the fuck out")
+#            db = load_db(message.guild.id)
+#            db.setdefault("kcs", {})
+#            db["kcs"].setdefault(str(message.channel.id), 0)
+#            if db["kcs"][str(message.channel.id)] > 0:
+#                counted = db["kcs"][str(message.channel.id)]
+#                db.setdefault("invs", {})
+#                db["invs"].setdefault(str(message.author.id), {})
+#                db["invs"][str(message.author.id)].setdefault("kreisicoins", 0)
+#                db["invs"][str(message.author.id)]["kreisicoins"] += counted
+#                db["kcs"][str(message.channel.id)] = 0
+#                save_db(message.guild.id, db)
+#                await message.channel.send(f"**{message.author.name}** just got **{counted}** kreisicoins")
         if message.content.lower().startswith("doas "): # doas terminal
             command = message.content.lower()[5:]
             fragments = command.split()
@@ -2444,6 +2458,7 @@ class MenuView(discord.ui.View):
     @discord.ui.button(label=">", style=discord.ButtonStyle.gray)
     async def next(self, inter: discord.Interaction, button: discord.ui.Button[MenuView]) -> None:
         db = load_db(self.guildId, self.merge)
+        db.setdefault("tags", [])
         self.page += 10
         if self.page > (math.ceil(len(db['tags'])/10))*10:
             self.page = (math.ceil(len(db['tags'])/10))*10
@@ -2452,6 +2467,7 @@ class MenuView(discord.ui.View):
     @discord.ui.button(label=">>", style=discord.ButtonStyle.gray)
     async def last(self, inter: discord.Interaction, button: discord.ui.Button[MenuView]) -> None:
         db = load_db(self.guildId, self.merge)
+        db.setdefault("tags", [])
         self.page = (math.ceil(len(db['tags'])/10))*10
         embed = generatetaglist(self.guildId, self.page, self.merge)
         await inter.response.edit_message(embed=embed, view=self)
